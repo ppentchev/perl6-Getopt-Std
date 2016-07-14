@@ -6,7 +6,7 @@ use Test;
 
 use Getopt::Std;
 
-plan 48;
+plan 51;
 
 my Str:D %base_opts = :foo('bar'), :baz('quux'), :h(''), :something('15'), :O('-3.5');
 my @base_args = <-v -I tina -vOverbose something -o something -- else -h>;
@@ -114,3 +114,9 @@ is-deeply @args, [<-X>], 'removes the options and the --';
 ok getopts($base_optstr, %opts, @args), 'ignores -X after a non-option argument';
 is-deeply %opts, Hash[Str:D].new(<v v>), 'stores the options before the non-option argument';
 is-deeply @args, [<nah -X>], 'removes the options before the non-option argument';
+
+%opts = %base_opts;
+@args = <-v - foo>;
+ok getopts($base_optstr, %opts, @args), 'accepts - after the options';
+is-deeply %opts, Hash[Str:D].new(<v v>), 'stores the options before the -';
+is-deeply @args, [<- foo>], 'removes the options before the - from the arguments';

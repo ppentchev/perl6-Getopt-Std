@@ -33,7 +33,7 @@ sub getopts(Str:D $optstr, Str:D %opts, @args) returns Bool:D is export
 			my $x = @args.shift;
 			if $x eq '--' {
 				last;
-			} elsif $x !~~ /^ '-' $<opts> = [ .* ] $/ {
+			} elsif $x !~~ /^ '-' $<opts> = [ .+ ] $/ {
 				# TODO: permute
 				push @restore, $x;
 				last;
