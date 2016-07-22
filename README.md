@@ -37,6 +37,14 @@ SYNOPSIS
             process_outfile $fname;
         }
 
+        # Permute usage (with both :all and :!all):
+        # - don't stop at the first non-option argument, look for more
+        #   arguments starting with a dash
+        # - stop at an -- argument
+
+        my Str:D %opts;
+        usage() unless getopts('ho:V', %opts, @*ARGS, :permute);
+
 DESCRIPTION
 ===========
 
@@ -51,11 +59,13 @@ FUNCTIONS
 
   * sub getopts
 
-        sub getopts(Str:D $optstr, Str:D %opts, @args, Bool :$all) returns Bool:D
+        sub getopts(Str:D $optstr, Str:D %opts, @args, Bool :$all, Bool :$permute) returns Bool:D
 
     Look for the command-line options specified in `$optstr` in the `@args` array. Record the options found into the `%opts` hash, leave only the non-option arguments in the `@args` array.
 
     The `:all` flag controls the behavior in the case of the same option specified more than once. Without it, options that take arguments have only the last argument recorded in the `%opts` hash; with the `:all` flag, all `%opts` values are arrays containing all the specified arguments. For example, the command line <var>-vI foo -I bar -v</var>, matched against an option string of <var>I:v</var>, would produce `{ :I<bar> :v<vv> }` without `:all` and `{ :I(['foo', 'bar']) :v(['v', 'v']) }` with `:all`.
+
+    The `:permute` flag specifies whether option parsing should stop at the first non-option argument, or go on and process any other arguments starting with a dash. A double dash (<var>--</var>) stops the processing in this case, too.
 
     Return true on success, false if an invalid option string has been specified or an unknown option has been found in the arguments array.
 
