@@ -59,7 +59,7 @@ FUNCTIONS
 
   * sub getopts
 
-        sub getopts(Str:D $optstr, Str:D %opts, @args, Bool :$all, Bool :$permute) returns Bool:D
+        sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute) returns Bool:D
 
     Look for the command-line options specified in `$optstr` in the `@args` array. Record the options found into the `%opts` hash, leave only the non-option arguments in the `@args` array.
 
