@@ -8,6 +8,11 @@ SYNOPSIS
 
         use Getopt::Std;
 
+        # Classical usage, slightly extended:
+        # - for options that take an argument, return only the last one
+        # - for options that don't, return a string containing the option
+        #   name as many times as the option was specified
+
         my Str:D %opts;
         usage() unless getopts('ho:V', %opts, @*ARGS);
 
@@ -16,6 +21,21 @@ SYNOPSIS
         exit(0) if %opts{<V h>}:k;
 
         my $outfile = %opts<o> // 'a.out';
+
+        # "All options" usage:
+        # - for options that take an argument, return an array of all
+        #   the arguments supplied if specified more than once
+        # - for options that don't, return the option name as many times
+        #   as it was specified
+
+        my Array[Str:D] %opts;
+        usage() unless getopts('o:v', %opts, @*ARGS, :all);
+
+        $verbose_level = %opts<v>.elems;
+
+        for %opts<o> -> $fname {
+            process_outfile $fname;
+        }
 
 DESCRIPTION
 ===========
@@ -31,11 +51,29 @@ FUNCTIONS
 
   * sub getopts
 
-        sub getopts(Str:D $optstr, Str:D %opts, @args)
+        sub getopts(Str:D $optstr, Str:D %opts, @args, Bool :$all) returns Bool:D
 
     Look for the command-line options specified in `$optstr` in the `@args` array. Record the options found into the `%opts` hash, leave only the non-option arguments in the `@args` array.
 
+    The `:all` flag controls the behavior in the case of the same option specified more than once. Without it, options that take arguments have only the last argument recorded in the `%opts` hash; with the `:all` flag, all `%opts` values are arrays containing all the specified arguments. For example, the command line <var>-vI foo -I bar -v</var>, matched against an option string of <var>I:v</var>, would produce `{ :I<bar> :v<vv> }` without `:all` and `{ :I(['foo', 'bar']) :v(['v', 'v']) }` with `:all`.
+
     Return true on success, false if an invalid option string has been specified or an unknown option has been found in the arguments array.
+
+  * sub getopts-collapse-array
+
+        sub getopts-collapse-array(Bool:D %defs, %opts)
+
+    This function is only available with a `:util` import.
+
+    Collapse a hash of option arrays as returned by `getopts(:all)` into  a hash of option strings as returned by `getopts(:!all)`. Replace the value of non-argument-taking options with a string containing the option name as many times as it was specified, and the value of argument-taking options with the last value supplied on the command line. Intended for `getopts()` internal use and testing.
+
+  * sub getopts-parse-optstring
+
+        sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D]
+
+    This function is only available with a `:util` import.
+
+    Parse a `getopts()` option string and return a hash with the options as keys and whether the respective option expects an argument as values. Intended for `getopts()` internal use and testing.
 
 AUTHOR
 ======
