@@ -4,13 +4,8 @@ use v6.c;
 
 unit module Getopt::Std;
 
-sub getopts(Str:D $optstr, Str:D %opts, @args) returns Bool:D is export
+sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D] is export(:util)
 {
-	if $optstr eq '' {
-		note 'No options defined';
-		return False;
-	}
-
 	# TODO: weird stuff like ':', '-', or '+' at the start of the string
 	# TODO: use a grammar to parse this one at least
 	my Bool:D %defs;
@@ -24,6 +19,23 @@ sub getopts(Str:D $optstr, Str:D %opts, @args) returns Bool:D is export
 		%defs{$<opt>} = $<arg> eq ':';
 		$ostr = ~$<rest>;
 	}
+	return %defs;
+}
+
+sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
+{
+	for %opts{*}:kv -> $opt, $value {
+		%opts{$opt} = %defs{$opt}?? $value[* - 1]!! $value.join('');
+	}
+}
+
+sub getopts(Str:D $optstr, %opts, @args, Bool :$all) returns Bool:D is export
+{
+	if $optstr eq '' {
+		note 'No options defined';
+		return False;
+	}
+	my Bool:D %defs = getopts-parse-optstring($optstr);
 
 	my Str:D @restore;
 	my Bool:D $result = True;
@@ -42,18 +54,20 @@ sub getopts(Str:D $optstr, Str:D %opts, @args) returns Bool:D is export
 	
 			while $x ~~ /^ $<opt> = [ <[a..zA..Z0..9?]> ] $<rest> = [ .* ] $/ {
 				$x = $<rest>;
+				my Str $value;
 				if not %defs{$<opt>}:k {
 					die "Invalid option '-$<opt>' specified";
 				} elsif !%defs{$<opt>} {
-					%opts{$<opt>} ~= $<opt>;
+					$value = ~$<opt>;
 				} elsif $x ne '' {
-					%opts{$<opt>} = ~$x;
+					$value = ~$x;
 					$x = '';
 				} elsif @args.elems == 0 {
 					die "Option '-$<opt>' requires an argument";
 				} else {
-					%opts{$<opt>} = @args.shift;
+					$value = @args.shift;
 				}
+				%opts{$<opt>}.push($value) with $value;
 			}
 			if $x ne '' {
 				die "Invalid option string '$x' specified";
@@ -66,6 +80,7 @@ sub getopts(Str:D $optstr, Str:D %opts, @args) returns Bool:D is export
 	}
 
 	@args.unshift(|@restore);
+	getopts-collapse-array %defs, %opts unless $all;
 	return $result;
 }
 
@@ -80,6 +95,11 @@ Getopt::Std - Process single-character options with option clustering
 =begin code
     use Getopt::Std;
 
+    # Classical usage, slightly extended:
+    # - for options that take an argument, return only the last one
+    # - for options that don't, return a string containing the option
+    #   name as many times as the option was specified
+
     my Str:D %opts;
     usage() unless getopts('ho:V', %opts, @*ARGS);
 
@@ -88,6 +108,21 @@ Getopt::Std - Process single-character options with option clustering
     exit(0) if %opts{<V h>}:k;
 
     my $outfile = %opts<o> // 'a.out';
+
+    # "All options" usage:
+    # - for options that take an argument, return an array of all
+    #   the arguments supplied if specified more than once
+    # - for options that don't, return the option name as many times
+    #   as it was specified
+
+    my Array[Str:D] %opts;
+    usage() unless getopts('o:v', %opts, @*ARGS, :all);
+
+    $verbose_level = %opts<v>.elems;
+
+    for %opts<o> -> $fname {
+        process_outfile $fname;
+    }
 =end code
 
 =head1 DESCRIPTION
@@ -117,14 +152,49 @@ options that do not.
 =begin item1
 sub getopts
 
-    sub getopts(Str:D $optstr, Str:D %opts, @args) returns Bool:D
+    sub getopts(Str:D $optstr, Str:D %opts, @args, Bool :$all) returns Bool:D
 
 Look for the command-line options specified in C<$optstr> in the C<@args>
 array.  Record the options found into the C<%opts> hash, leave only
 the non-option arguments in the C<@args> array.
 
+The C<:all> flag controls the behavior in the case of the same option
+specified more than once.  Without it, options that take arguments have
+only the last argument recorded in the C<%opts> hash; with the C<:all>
+flag, all C<%opts> values are arrays containing all the specified
+arguments.  For example, the command line R<-vI foo -I bar -v>, matched
+against an option string of R<I:v>, would produce C<{ :I<bar> :v<vv> }>
+without C<:all> and C<{ :I(['foo', 'bar']) :v(['v', 'v']) }> with C<:all>.
+
 Return true on success, false if an invalid option string has been
 specified or an unknown option has been found in the arguments array.
+=end item1
+
+=begin item1
+sub getopts-collapse-array
+
+    sub getopts-collapse-array(Bool:D %defs, %opts)
+
+This function is only available with a C<:util> import.
+
+Collapse a hash of option arrays as returned by C<getopts(:all)> into 
+a hash of option strings as returned by C<getopts(:!all)>.  Replace
+the value of non-argument-taking options with a string containing
+the option name as many times as it was specified, and the value of
+argument-taking options with the last value supplied on the command line.
+Intended for C<getopts()> internal use and testing.
+=end item1
+
+=begin item1
+sub getopts-parse-optstring
+
+    sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D]
+
+This function is only available with a C<:util> import.
+
+Parse a C<getopts()> option string and return a hash with the options
+as keys and whether the respective option expects an argument as values.
+Intended for C<getopts()> internal use and testing.
 =end item1
 
 =head1 AUTHOR

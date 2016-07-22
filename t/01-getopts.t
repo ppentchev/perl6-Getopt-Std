@@ -4,21 +4,70 @@ use v6.c;
 
 use Test;
 
-use Getopt::Std;
+use Getopt::Std :DEFAULT, :util;
 
-my Str:D %base_opts = :foo('bar'), :baz('quux'), :h(''), :something('15'), :O('-3.5');
-my Str:D @base_args = <-v -I tina -vOverbose something -o something -- else -h>;
-my $base_optstr = 'I:O:o:v';
+my Str:D %base-opts = :foo('bar'), :baz('quux'), :h(''), :something('15'), :O('-3.5');
+my Str:D @base-args = <-v -I tina -vOverbose something -o something -- else -h>;
+my $base-optstr = 'I:O:o:v';
 my Str:D %empty_hash;
 
-sub test-getopts(Str:D :$name, Str:D :$optstring = $base_optstr, :@args = @base_args, Str:D :%opts = %base_opts, Bool:D :$res = True, :@res-args, :%res-opts)
+sub check-deeply-relaxed($got, $expected) returns Bool:D
 {
-	my Str:D @test-args = @args;
-	my Str:D %test-opts = %opts;
-	my Bool:D $result = getopts($optstring, %test-opts, @test-args);
-	is $result, $res, "$name: returned result";
-	is-deeply %test-opts, Hash[Str:D].new(%res-opts), "$name: stores the expected options";
-	is-deeply @test-args, Array[Str:D](|@res-args), "$name: leaves the expected arguments";
+	given $expected {
+		when Associative {
+			return False unless $got ~~ Associative;
+			return False if Set.new($got.keys) ⊖ Set.new($expected.keys);
+			return ?( $got.keys.map(
+			    { check-deeply-relaxed($got{$_}, $expected{$_}) }
+			    ).all);
+		}
+		
+		when Positional {
+			return False unless $got ~~ Positional;
+			return False unless $got.elems == $expected.elems;
+			return ?( ($got.list Z $expected.list).map(-> ($g, $e)
+			    { check-deeply-relaxed($g, $e) }
+			    ).all);
+			return True;
+		}
+		
+		when Str {
+			return $got eq $expected;
+		}
+		
+		when Numeric {
+			return $got == $expected;
+		}
+		
+		default {
+			return False;
+		}
+	}
+}
+
+sub test-deeply-relaxed($got, $expected) returns Bool:D
+{
+	return True if check-deeply-relaxed($got, $expected);
+	diag "Expected:\n\t$expected.perl()\nGot:\n\t$got.perl()\n";
+	return False;
+}
+
+sub test-getopts(Str:D :$name, Str:D :$optstring = $base-optstr, :@args = @base-args, Str:D :%opts = %base-opts, Bool:D :$res = True, :@res-args, :%res-opts)
+{
+	my Bool:D %defs = getopts-parse-optstring($optstring);
+
+	for (False, True) -> $all {
+		my Str:D $test = "$name [all: $all]";
+		my Str:D @test-args = @args;
+		my %test-opts = %opts;
+		my Bool:D $result = getopts($optstring, %test-opts, @test-args, :$all);
+		is $result, $res, "$test: returned result";
+
+		my %exp-opts = %res-opts;
+		getopts-collapse-array(%defs, %exp-opts) unless $all;
+		ok test-deeply-relaxed(%test-opts, %exp-opts), "$test: stores the expected options";
+		ok test-deeply-relaxed(@test-args, @res-args), "$test: leaves the expected arguments";
+	}
 }
 
 my @tests = (
@@ -26,8 +75,8 @@ my @tests = (
 		:name('empty string'),
 		:optstring(''),
 		:!res,
-		:res-args(@base_args),
-		:res-opts(%base_opts),
+		:res-args(@base-args),
+		:res-opts(%base-opts),
 	},
 	{
 		:name('no command-line arguments'),
@@ -57,13 +106,13 @@ my @tests = (
 		:name('repeated flag'),
 		:args(<-vv out>),
 		:res-args([<out>]),
-		:res-opts({:v('vv')}),
+		:res-opts({:v([<v v>])}),
 	},
 	{
 		:name('another repeated flag'),
 		:args(<-v -v out>),
 		:res-args([<out>]),
-		:res-opts({:v('vv')}),
+		:res-opts({:v([<v v>])}),
 	},
 	{
 		:name('glued argument'),
@@ -90,9 +139,33 @@ my @tests = (
 		:res-opts({:I('foo'), :v('v')}),
 	},
 	{
+		:name('repeated argument 1'),
+		:args(<-Ifoo -Ibar baz>),
+		:res-args([<baz>]),
+		:res-opts({:I[<foo bar>]}),
+	},
+	{
+		:name('repeated argument 2'),
+		:args(<-Ifoo -I bar baz>),
+		:res-args([<baz>]),
+		:res-opts({:I[<foo bar>]}),
+	},
+	{
+		:name('repeated argument 3'),
+		:args(<-I foo -Ibar baz>),
+		:res-args([<baz>]),
+		:res-opts({:I[<foo bar>]}),
+	},
+	{
+		:name('repeated argument 4'),
+		:args(<-I foo -I bar baz>),
+		:res-args([<baz>]),
+		:res-opts({:I[<foo bar>]}),
+	},
+	{
 		:name('complicated example'),
 		:res-args(<something -o something -- else -h>),
-		:res-opts({:I('tina'), :O('verbose'), :v('vv')}),
+		:res-opts({:I('tina'), :O('verbose'), :v([<v v>])}),
 	},
 	{
 		:name('unrecognized option'),
@@ -141,5 +214,5 @@ my @tests = (
 	},
 );
 
-plan 3 * @tests.elems;
+plan 3 * 2 * @tests.elems;
 test-getopts(|$_) for @tests;
