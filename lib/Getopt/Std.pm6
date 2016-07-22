@@ -117,7 +117,7 @@ options that do not.
 =begin item1
 sub getopts
 
-    sub getopts(Str:D $optstr, Str:D %opts, @args)
+    sub getopts(Str:D $optstr, Str:D %opts, @args) returns Bool:D
 
 Look for the command-line options specified in C<$optstr> in the C<@args>
 array.  Record the options found into the C<%opts> hash, leave only
