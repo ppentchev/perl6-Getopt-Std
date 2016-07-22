@@ -29,7 +29,7 @@ sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
 	}
 }
 
-sub getopts(Str:D $optstr, %opts, @args, Bool :$all) returns Bool:D is export
+sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute) returns Bool:D is export
 {
 	if $optstr eq '' {
 		note 'No options defined';
@@ -46,9 +46,12 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all) returns Bool:D is export
 			if $x eq '--' {
 				last;
 			} elsif $x !~~ /^ '-' $<opts> = [ .+ ] $/ {
-				# TODO: permute
 				push @restore, $x;
-				last;
+				if $permute {
+					next;
+				} else {
+					last;
+				}
 			}
 			$x = $<opts>;
 	
@@ -123,6 +126,14 @@ Getopt::Std - Process single-character options with option clustering
     for %opts<o> -> $fname {
         process_outfile $fname;
     }
+
+    # Permute usage (with both :all and :!all):
+    # - don't stop at the first non-option argument, look for more
+    #   arguments starting with a dash
+    # - stop at an -- argument
+
+    my Str:D %opts;
+    usage() unless getopts('ho:V', %opts, @*ARGS, :permute);
 =end code
 
 =head1 DESCRIPTION
@@ -152,7 +163,7 @@ options that do not.
 =begin item1
 sub getopts
 
-    sub getopts(Str:D $optstr, Str:D %opts, @args, Bool :$all) returns Bool:D
+    sub getopts(Str:D $optstr, Str:D %opts, @args, Bool :$all, Bool :$permute) returns Bool:D
 
 Look for the command-line options specified in C<$optstr> in the C<@args>
 array.  Record the options found into the C<%opts> hash, leave only
@@ -165,6 +176,11 @@ flag, all C<%opts> values are arrays containing all the specified
 arguments.  For example, the command line R<-vI foo -I bar -v>, matched
 against an option string of R<I:v>, would produce C<{ :I<bar> :v<vv> }>
 without C<:all> and C<{ :I(['foo', 'bar']) :v(['v', 'v']) }> with C<:all>.
+
+The C<:permute> flag specifies whether option parsing should stop at
+the first non-option argument, or go on and process any other arguments
+starting with a dash.  A double dash (R<-->) stops the processing in
+this case, too.
 
 Return true on success, false if an invalid option string has been
 specified or an unknown option has been found in the arguments array.

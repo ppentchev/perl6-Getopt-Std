@@ -20,6 +20,9 @@ class TestCase
 	has Bool:D $.res = True;
 	has @.res-args is required;
 	has %.res-opts is required;
+	has Bool $.permute-res = $!res,
+	has @.permute-args = @!res-args;
+	has %.permute-opts = %!res-opts;
 }
 
 sub check-deeply-relaxed($got, $expected) returns Bool:D
@@ -67,17 +70,25 @@ sub test-getopts(TestCase:D $t)
 {
 	my Bool:D %defs = getopts-parse-optstring($t.optstring);
 
-	for (False, True) -> $all {
-		my Str:D $test = "$t.name() [all: $all]";
+	sub run-test(Bool:D $res, %res-opts, @res-args, Bool:D :$all, Bool:D :$permute)
+	{
+		my Str:D $test = "$t.name() [all: $all permute: $permute]";
 		my Str:D @test-args = $t.args;
 		my %test-opts = $t.opts;
-		my Bool:D $result = getopts($t.optstring, %test-opts, @test-args, :$all);
-		is $result, $t.res, "$test: returned result";
+		my Bool:D $result = getopts($t.optstring, %test-opts, @test-args, :$all, :$permute);
+		is $result, $res, "$test: returned result";
 
-		my %exp-opts = $t.res-opts;
+		my %exp-opts = %res-opts;
 		getopts-collapse-array(%defs, %exp-opts) unless $all;
 		ok test-deeply-relaxed(%test-opts, %exp-opts), "$test: stores the expected options";
-		ok test-deeply-relaxed(@test-args, $t.res-args), "$test: leaves the expected arguments";
+		ok test-deeply-relaxed(@test-args, @res-args), "$test: leaves the expected arguments";
+	}
+
+	for (False, True) -> $all {
+		run-test $t.res, $t.res-opts, $t.res-args,
+		    :$all, :!permute;
+		run-test $t.permute-res, $t.permute-opts, $t.permute-args,
+		    :$all, :permute;
 	}
 }
 
@@ -177,6 +188,8 @@ my @tests = (
 		:name('complicated example'),
 		:res-args(<something -o something -- else -h>),
 		:res-opts({:I('tina'), :O('verbose'), :v([<v v>])}),
+		:permute-args(<something else -h>),
+		:permute-opts({:I('tina'), :O('verbose'), :o('something'), :v([<v v>])}),
 	),
 	TestCase.new(
 		:name('unrecognized option'),
@@ -216,6 +229,8 @@ my @tests = (
 		:args(<-v nah -X>),
 		:res-opts({:v('v')}),
 		:res-args(<nah -X>),
+		:!permute-res,
+		:permute-args([<nah>]),
 	),
 	TestCase.new(
 		:name('a dash after the options'),
@@ -223,7 +238,15 @@ my @tests = (
 		:res-args(<- foo>),
 		:res-opts({:v('v')}),
 	),
+	TestCase.new(
+		:name('permute'),
+		:args(<-v -Ifoo something -o nothing - and -v -Iso on>),
+		:res-opts({:I('foo'), :v('v')}),
+		:res-args(<something -o nothing - and -v -Iso on>),
+		:permute-opts({:I([<foo so>]), :o('nothing'), :v([<v v>])}),
+		:permute-args(<something - and on>),
+	),
 );
 
-plan 3 * 2 * @tests.elems;
+plan 3 * 2 * 2 * @tests.elems;
 test-getopts($_) for @tests;
