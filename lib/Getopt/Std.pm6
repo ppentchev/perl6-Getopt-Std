@@ -4,22 +4,48 @@ use v6.c;
 
 unit module Getopt::Std;
 
-sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D] is export(:util)
+grammar GetoptDefs
 {
 	# TODO: weird stuff like ':', '-', or '+' at the start of the string
-	# TODO: use a grammar to parse this one at least
-	my Bool:D %defs;
-	my Str:D $ostr = $optstr;
-	while $ostr ~~ /^
-	    $<opt> = [ <[a..zA..Z0..9?]> ]
-	    $<arg> = [ ':' ? ]
-	    $<rest> = [ .* ]
-	    $/ {
-		die "Duplicate option '-$<opt>' defined" if %defs{$<opt>}:k;
-		%defs{$<opt>} = $<arg> eq ':';
-		$ostr = ~$<rest>;
+
+	token TOP { <options> }
+	token options { <option>* }
+	token option { <optletter> <optarg>? }
+	token optletter { <[a..zA..Z0..9?]> }
+	token optarg { ':' }
+
+	class Actions
+	{
+		method TOP($/) {
+			my @opts = $<options>.made;
+			my $dup-check = bag(@opts.map(*.key)).grep(*.value > 1).map(*.key).sort.join(', ');
+			die "Duplicate option(s) defined: $dup-check" if $dup-check;
+			make Hash[Bool:D].new(@opts);
+		}
+
+		method options($/) {
+			make $<option>».made;
+		}
+
+		method option($/) {
+			make ~$<optletter> => ?$<optarg>
+		}
 	}
-	return %defs;
+
+	method parse(|c)
+	{
+		nextwith actions => Actions, |c;
+	}
+
+	method subparse(|c)
+	{
+		nextwith actions => Actions, |c;
+	}
+}
+
+sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D] is export(:util)
+{
+	return GetoptDefs.parse($optstr).made;
 }
 
 sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
