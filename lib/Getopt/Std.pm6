@@ -66,47 +66,48 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute) returns Boo
 	my Str:D @restore;
 	my Bool:D $result = True;
 	%opts = ();
-	try {
-		while @args {
-			my $x = @args.shift;
-			if $x eq '--' {
-				last;
-			} elsif $x !~~ /^ '-' $<opts> = [ .+ ] $/ {
-				push @restore, $x;
-				if $permute {
-					next;
-				} else {
+	%opts{$_.key}.push($_.value) for gather {
+		try {
+			while @args {
+				my $x = @args.shift;
+				if $x eq '--' {
 					last;
+				} elsif $x !~~ /^ '-' $<opts> = [ .+ ] $/ {
+					push @restore, $x;
+					if $permute {
+						next;
+					} else {
+						last;
+					}
 				}
-			}
-			$x = $<opts>;
+				$x = ~$<opts>;
 	
-			while $x ~~ /^ $<opt> = [ <[a..zA..Z0..9?]> ] $<rest> = [ .* ] $/ {
-				$x = $<rest>;
-				my Str $value;
-				if not %defs{$<opt>}:k {
-					die "Invalid option '-$<opt>' specified";
-				} elsif !%defs{$<opt>} {
-					$value = ~$<opt>;
-				} elsif $x ne '' {
-					$value = ~$x;
-					$x = '';
-				} elsif @args.elems == 0 {
-					die "Option '-$<opt>' requires an argument";
-				} else {
-					$value = @args.shift;
+				while $x ~~ /^ $<opt> = [ <[a..zA..Z0..9?]> ] $<rest> = [ .* ] $/ {
+					$x = ~$<rest>;
+					my Str:D $opt = ~$<opt>;
+					if not %defs{$opt}:k {
+						die "Invalid option '-$<opt>' specified";
+					} elsif !%defs{$opt} {
+						take $opt => $opt;
+					} elsif $x ne '' {
+						take $opt => $x;
+						$x = '';
+					} elsif @args.elems == 0 {
+						die "Option '-$<opt>' requires an argument";
+					} else {
+						take $opt => @args.shift;
+					}
 				}
-				%opts{$<opt>}.push($value) with $value;
+				if $x ne '' {
+					die "Invalid option string '$x' specified";
+				}
 			}
-			if $x ne '' {
-				die "Invalid option string '$x' specified";
-			}
+		};
+		if $! {
+			note ~$!;
+			$result = False;
 		}
 	};
-	if $! {
-		note "$!";
-		$result = False;
-	}
 
 	@args.unshift(|@restore);
 	getopts-collapse-array %defs, %opts unless $all;
