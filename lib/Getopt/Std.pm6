@@ -11,7 +11,7 @@ grammar GetoptDefs
 	token TOP { <options> }
 	token options { <option>* }
 	token option { <optletter> <optarg>? }
-	token optletter { <[a..zA..Z0..9?]> }
+	token optletter { <-[:]> }
 	token optarg { ':' }
 
 	class Actions

@@ -32,12 +32,6 @@ my ParseTestCase:D @parse-tests = (
 		:defs({}),
 	),
 	ParseTestCase.new(
-		:name('not a letter'),
-		:optstring('hI:#'),
-		:dies,
-		:defs({}),
-	),
-	ParseTestCase.new(
 		:name('duplicate option'),
 		:optstring('hh'),
 		:dies,
