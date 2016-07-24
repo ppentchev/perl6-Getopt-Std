@@ -18,7 +18,7 @@ grammar GetoptDefs
 	{
 		method TOP($/) {
 			my @opts = $<options>.made;
-			my $dup-check = bag(@opts.map(*.key)).grep(*.value > 1).map(*.key).sort.join(', ');
+			my $dup-check = @opts.map(*.key).Bag.grep(*.value > 1).map(*.key).sort.join(', ');
 			die "Duplicate option(s) defined: $dup-check" if $dup-check;
 			make Hash[Bool:D].new(@opts);
 		}
