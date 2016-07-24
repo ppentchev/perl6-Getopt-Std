@@ -23,6 +23,8 @@ class TestCase
 	has Bool $.permute-res = $!res,
 	has @.permute-args = @!res-args;
 	has %.permute-opts = %!res-opts;
+	has @.unknown-args;
+	has %.unknown-opts;
 }
 
 sub check-deeply-relaxed($got, $expected) returns Bool:D
@@ -70,13 +72,15 @@ sub test-getopts(TestCase:D $t)
 {
 	my Bool:D %defs = getopts-parse-optstring($t.optstring);
 
-	sub run-test(Bool:D $res, %res-opts, @res-args, Bool:D :$all, Bool:D :$permute)
+	sub run-test(Bool:D $res, %res-opts, @res-args, Bool:D :$all,
+	    Bool:D :$permute, Bool:D :$unknown)
 	{
-		my Str:D $test = "$t.name() [all: $all permute: $permute]";
+		my Str:D $test = "$t.name() [all: $all permute: $permute unknown: $unknown]";
 		my Str:D @test-args = $t.args;
 		my %test-opts = $t.opts;
-		my Bool:D $result = getopts($t.optstring, %test-opts, @test-args, :$all, :$permute);
-		is $result, $res, "$test: returned result";
+		my Bool:D $result = getopts($t.optstring, %test-opts, @test-args,
+		    :$all, :$permute, :$unknown);
+		is $result, $res || $unknown, "$test: returned result";
 
 		my %exp-opts = %res-opts;
 		getopts-collapse-array(%defs, %exp-opts) unless $all;
@@ -86,9 +90,12 @@ sub test-getopts(TestCase:D $t)
 
 	for (False, True) -> $all {
 		run-test $t.res, $t.res-opts, $t.res-args,
-		    :$all, :!permute;
+		    :$all, :!permute, :!unknown;
 		run-test $t.permute-res, $t.permute-opts, $t.permute-args,
-		    :$all, :permute;
+		    :$all, :permute, :!unknown;
+
+		run-test $t.res, $t.unknown-opts, $t.unknown-args,
+		    :$all, :!permute, :unknown if $t.unknown-opts;
 	}
 }
 
@@ -197,6 +204,8 @@ my @tests = (
 		:!res,
 		:res-args(()),
 		:res-opts({}),
+		:unknown-args(()),
+		:unknown-opts({':' => ['X']}),
 	),
 	TestCase.new(
 		:name('unrecognized option glued to a good one'),
@@ -204,13 +213,17 @@ my @tests = (
 		:!res,
 		:res-args(()),
 		:res-opts({:v('v')}),
+		:unknown-args(()),
+		:unknown-opts({':' => ['X'], :v('v')}),
 	),
 	TestCase.new(
 		:name('unrecognized option after a good one'),
-		:args([<-v -X>]),
+		:args([<-v -X and more>]),
 		:!res,
-		:res-args(()),
+		:res-args(<and more>),
 		:res-opts({:v('v')}),
+		:unknown-args(<and more>),
+		:unknown-opts({':' => ['X'], :v('v')}),
 	),
 	TestCase.new(
 		:name('-X as an option argument'),
@@ -248,5 +261,5 @@ my @tests = (
 	),
 );
 
-plan 3 * 2 * 2 * @tests.elems;
+plan 3 * 2 * (2 * @tests.elems + @tests.grep(*.unknown-opts).elems);
 test-getopts($_) for @tests;

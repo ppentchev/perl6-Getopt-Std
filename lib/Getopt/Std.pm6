@@ -6,7 +6,7 @@ unit module Getopt::Std;
 
 grammar GetoptDefs
 {
-	# TODO: weird stuff like ':' or '-' at the start of the string
+	# TODO: weird stuff like '-' at the start of the string
 
 	token TOP { <options> }
 	token options { <option>* }
@@ -57,7 +57,7 @@ sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
 	}
 }
 
-sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute) returns Bool:D is export
+sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute, Bool :$unknown) returns Bool:D is export
 {
 	if $optstr eq '' {
 		note 'No options defined';
@@ -88,7 +88,8 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute) returns Boo
 					$x = ~$<rest>;
 					my Str:D $opt = ~$<opt>;
 					if not %defs{$opt}:k {
-						die "Invalid option '-$<opt>' specified";
+						die "Invalid option '-$<opt>' specified" unless $unknown;
+						take ':' => $opt;
 					} elsif !%defs{$opt} {
 						take $opt => $opt;
 					} elsif $x ne '' {
@@ -192,7 +193,7 @@ options that do not.
 =begin item1
 sub getopts
 
-    sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute) returns Bool:D
+    sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute, Bool :$unknown) returns Bool:D
 
 Look for the command-line options specified in C<$optstr> in the C<@args>
 array.  Record the options found into the C<%opts> hash, leave only
@@ -210,6 +211,14 @@ The C<:permute> flag specifies whether option parsing should stop at
 the first non-option argument, or go on and process any other arguments
 starting with a dash.  A double dash (R<-->) stops the processing in
 this case, too.
+
+The C<:unknown> flag controls the handling of unknown options - ones not
+specified in the C<$optstr>, but present in the C<@args>.  If it is
+false (the default), C<getopts()> will output an error message and
+return false; otherwise, the unknown option character will be present in
+the result C<%opts> as an argument to a C<:> option and C<getopts()> will
+still return true.  This is similar to the behavior of some C<getopt(3)>
+implementations if C<$optstr> starts with a C<:> character.
 
 Return true on success, false if an invalid option string has been
 specified or an unknown option has been found in the arguments array.
