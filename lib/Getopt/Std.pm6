@@ -45,7 +45,9 @@ grammar GetoptDefs
 
 sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D] is export(:util)
 {
-	return GetoptDefs.parse($optstr).made;
+	my $m = GetoptDefs.parse($optstr);
+	die "Could not parse the options string '$optstr'" without $m;
+	return $m.made;
 }
 
 sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
