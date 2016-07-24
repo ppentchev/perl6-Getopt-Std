@@ -6,7 +6,7 @@ unit module Getopt::Std;
 
 grammar GetoptDefs
 {
-	# TODO: weird stuff like ':', '-', or '+' at the start of the string
+	# TODO: weird stuff like ':' or '-' at the start of the string
 
 	token TOP { <options> }
 	token options { <option>* }
