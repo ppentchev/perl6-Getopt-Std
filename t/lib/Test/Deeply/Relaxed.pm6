@@ -4,6 +4,8 @@ unit module Test::Deeply::Relaxed;
 
 use v6.c;
 
+use Test;
+
 sub check-deeply-relaxed($got, $expected) returns Bool:D
 {
 	given $expected {
@@ -38,9 +40,19 @@ sub check-deeply-relaxed($got, $expected) returns Bool:D
 	}
 }
 
-sub test-deeply-relaxed($got, $expected) returns Bool:D is export
+sub test-deeply-relaxed($got, $expected) returns Bool:D
 {
 	return True if check-deeply-relaxed($got, $expected);
-	Test::diag "Expected:\n\t$expected.perl()\nGot:\n\t$got.perl()\n";
+	diag "Expected:\n\t$expected.perl()\nGot:\n\t$got.perl()\n";
 	return False;
+}
+
+sub is-deeply-relaxed($got, $expected, $name) is export
+{
+	ok test-deeply-relaxed($got, $expected), $name;
+}
+
+sub isnt-deeply-relaxed($got, $expected, $name) is export
+{
+	nok test-deeply-relaxed($got, $expected), $name;
 }

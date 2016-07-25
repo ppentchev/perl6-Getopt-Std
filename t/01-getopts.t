@@ -48,8 +48,8 @@ sub test-getopts(TestCase:D $t)
 
 		my %exp-opts = %res-opts;
 		getopts-collapse-array(%defs, %exp-opts) unless $all;
-		ok test-deeply-relaxed(%test-opts, %exp-opts), "$test: stores the expected options";
-		ok test-deeply-relaxed(@test-args, @res-args), "$test: leaves the expected arguments";
+		is-deeply-relaxed %test-opts, %exp-opts, "$test: stores the expected options";
+		is-deeply-relaxed @test-args, @res-args, "$test: leaves the expected arguments";
 	}
 
 	for (False, True) -> $all {
