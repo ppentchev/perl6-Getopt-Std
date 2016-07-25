@@ -98,6 +98,12 @@ my CollapseTestCase:D @collapse-tests = (
 		:opts({:h(['h']), :i([<file1.txt file2.txt>]), :o(['output']), :v([<v v v>])}),
 		:res({:h('h'), :i('file2.txt'), :o('output'), :v('vvv')}),
 	),
+	CollapseTestCase.new(
+		:name('chr(1)'),
+		:defs({:!h, :!V}),
+		:opts({:h(['h']), :v(['v', 'v']), chr(1) => <a b c>}),
+		:res({:h('h'), :v('vv'), chr(1) => 'c'}),
+	),
 );
 
 sub test-collapse(CollapseTestCase:D $t)

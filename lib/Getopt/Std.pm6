@@ -6,8 +6,6 @@ unit module Getopt::Std;
 
 grammar GetoptDefs
 {
-	# TODO: weird stuff like '-' at the start of the string
-
 	token TOP { <options> }
 	token options { <option>* }
 	token option { <optletter> <optarg>? }
@@ -53,11 +51,14 @@ sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D] is export(:util)
 sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
 {
 	for %opts{*}:kv -> $opt, $value {
-		%opts{$opt} = %defs{$opt}?? $value[* - 1]!! $value.join('');
+		%opts{$opt} = %defs{$opt} || $opt eq chr(1)
+		    ?? $value[* - 1]
+		    !! $value.join('');
 	}
 }
 
-sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute, Bool :$unknown) returns Bool:D is export
+sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
+    Bool :$permute, Bool :$unknown) returns Bool:D is export
 {
 	if $optstr eq '' {
 		note 'No options defined';
@@ -76,7 +77,7 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute, Bool :$unkn
 					last;
 				} elsif $x !~~ /^ '-' $<opts> = [ .+ ] $/ {
 					push @restore, $x;
-					if $permute {
+					if $permute || $nonopts {
 						next;
 					} else {
 						last;
@@ -112,7 +113,12 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute, Bool :$unkn
 		}
 	};
 
-	@args.unshift(|@restore);
+	if $nonopts {
+		die "getopts() internal error: arguments left with nonopts: @args.perl()" if @args;
+		%opts{chr(1)} = @restore.clone;
+	} else {
+		@args.unshift(|@restore);
+	}
 	getopts-collapse-array %defs, %opts unless $all;
 	return $result;
 }
@@ -193,7 +199,8 @@ options that do not.
 =begin item1
 sub getopts
 
-    sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute, Bool :$unknown) returns Bool:D
+    sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
+      Bool :$permute, Bool :$unknown) returns Bool:D
 
 Look for the command-line options specified in C<$optstr> in the C<@args>
 array.  Record the options found into the C<%opts> hash, leave only
@@ -219,6 +226,13 @@ return false; otherwise, the unknown option character will be present in
 the result C<%opts> as an argument to a C<:> option and C<getopts()> will
 still return true.  This is similar to the behavior of some C<getopt(3)>
 implementations if C<$optstr> starts with a C<:> character.
+
+The C<:nonopts> flag makes C<getopts()> treat each non-option argument as
+an argument to an option with a character code 1.  This is similar to
+the behavior of some C<getopt(3)> implementations if C<$optstr> starts
+with a C<-> character.  The C<:permute> flag is redundant if C<:nonopts>
+is specified since the processing will not stop until the arguments array
+has been exhausted.
 
 Return true on success, false if an invalid option string has been
 specified or an unknown option has been found in the arguments array.
