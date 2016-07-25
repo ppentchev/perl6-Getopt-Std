@@ -80,7 +80,8 @@ sub test-getopts(TestCase:D $t)
 		my %test-opts = $t.opts;
 		my Bool:D $result = getopts($t.optstring, %test-opts, @test-args,
 		    :$all, :$permute, :$unknown);
-		is $result, $res || $unknown, "$test: returned result";
+		my Bool:D $exp-res = $res || $unknown;
+		is $result, $exp-res, "$test: " ~ ($exp-res?? 'succeeds'!! 'fails');
 
 		my %exp-opts = %res-opts;
 		getopts-collapse-array(%defs, %exp-opts) unless $all;
