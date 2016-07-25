@@ -6,6 +6,10 @@ use Test;
 
 use Getopt::Std :DEFAULT, :util;
 
+use lib 't/lib';
+
+use Test::Deeply::Relaxed;
+
 my Str:D %base-opts = :foo('bar'), :baz('quux'), :h(''), :something('15'), :O('-3.5');
 my Str:D @base-args = <-v -I tina -vOverbose something -o something -- else -h>;
 my $base-optstr = 'I:O:o:v';
@@ -25,47 +29,6 @@ class TestCase
 	has %.permute-opts = %!res-opts;
 	has @.unknown-args;
 	has %.unknown-opts;
-}
-
-sub check-deeply-relaxed($got, $expected) returns Bool:D
-{
-	given $expected {
-		when Associative {
-			return False unless $got ~~ Associative;
-			return False if Set.new($got.keys) ⊖ Set.new($expected.keys);
-			return ?( $got.keys.map(
-			    { check-deeply-relaxed($got{$_}, $expected{$_}) }
-			    ).all);
-		}
-		
-		when Positional {
-			return False unless $got ~~ Positional;
-			return False unless $got.elems == $expected.elems;
-			return ?( ($got.list Z $expected.list).map(-> ($g, $e)
-			    { check-deeply-relaxed($g, $e) }
-			    ).all);
-			return True;
-		}
-		
-		when Str {
-			return $got eq $expected;
-		}
-		
-		when Numeric {
-			return $got == $expected;
-		}
-		
-		default {
-			return False;
-		}
-	}
-}
-
-sub test-deeply-relaxed($got, $expected) returns Bool:D
-{
-	return True if check-deeply-relaxed($got, $expected);
-	diag "Expected:\n\t$expected.perl()\nGot:\n\t$got.perl()\n";
-	return False;
 }
 
 sub test-getopts(TestCase:D $t)
