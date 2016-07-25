@@ -59,13 +59,18 @@ FUNCTIONS
 
   * sub getopts
 
-        sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$permute) returns Bool:D
+        sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
+          Bool :$permute, Bool :$unknown) returns Bool:D
 
     Look for the command-line options specified in `$optstr` in the `@args` array. Record the options found into the `%opts` hash, leave only the non-option arguments in the `@args` array.
 
     The `:all` flag controls the behavior in the case of the same option specified more than once. Without it, options that take arguments have only the last argument recorded in the `%opts` hash; with the `:all` flag, all `%opts` values are arrays containing all the specified arguments. For example, the command line <var>-vI foo -I bar -v</var>, matched against an option string of <var>I:v</var>, would produce `{ :I<bar> :v<vv> }` without `:all` and `{ :I(['foo', 'bar']) :v(['v', 'v']) }` with `:all`.
 
     The `:permute` flag specifies whether option parsing should stop at the first non-option argument, or go on and process any other arguments starting with a dash. A double dash (<var>--</var>) stops the processing in this case, too.
+
+    The `:unknown` flag controls the handling of unknown options - ones not specified in the `$optstr`, but present in the `@args`. If it is false (the default), `getopts()` will output an error message and return false; otherwise, the unknown option character will be present in the result `%opts` as an argument to a `:` option and `getopts()` will still return true. This is similar to the behavior of some `getopt(3)` implementations if `$optstr` starts with a `:` character.
+
+    The `:nonopts` flag makes `getopts()` treat each non-option argument as an argument to an option with a character code 1. This is similar to the behavior of some `getopt(3)` implementations if `$optstr` starts with a `-` character. The `:permute` flag is redundant if `:nonopts` is specified since the processing will not stop until the arguments array has been exhausted.
 
     Return true on success, false if an invalid option string has been specified or an unknown option has been found in the arguments array.
 
