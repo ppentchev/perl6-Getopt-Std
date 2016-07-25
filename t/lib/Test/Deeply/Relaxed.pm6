@@ -27,10 +27,12 @@ sub check-deeply-relaxed($got, $expected) returns Bool:D
 		}
 		
 		when Str {
+			return False unless $got ~~ Str;
 			return $got eq $expected;
 		}
 		
 		when Numeric {
+			return False unless $got ~~ Numeric;
 			return $got == $expected;
 		}
 		
