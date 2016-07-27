@@ -3,12 +3,9 @@
 use v6.c;
 
 use Test;
+use Test::Deeply::Relaxed;
 
 use Getopt::Std :DEFAULT, :util;
-
-use lib 't/lib';
-
-use Test::Deeply::Relaxed;
 
 my Str:D %base-opts = :foo('bar'), :baz('quux'), :h(''), :something('15'), :O('-3.5');
 my Str:D @base-args = <-v -I tina -vOverbose something -o something -- else -h>;

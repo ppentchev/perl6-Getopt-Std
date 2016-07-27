@@ -3,12 +3,9 @@
 use v6.c;
 
 use Test;
+use Test::Deeply::Relaxed;
 
 use Getopt::Std;
-
-use lib 't/lib';
-
-use Test::Deeply::Relaxed;
 
 plan 9;
 
