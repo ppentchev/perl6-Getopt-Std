@@ -15,7 +15,7 @@ my @args = @a-args.clone;
 my $res = getopts('hI:v', %opts, @args);
 
 is $res, True, 'nonopts base: succeeds';
-is-deeply-relaxed @args, <bar -v quux>, 'nonopts base: args';
+is-deeply-relaxed @args, [<bar -v quux>], 'nonopts base: args';
 is-deeply-relaxed %opts, {:h('h'), :I('foo')}, 'nonopts base: opts';
 
 %opts = ();
