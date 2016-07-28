@@ -9,4 +9,6 @@ perl6:
    - 2016.06
    - 2016.07.1
    - latest
-before_script: panda install Test::Deeply::Relaxed
+before_script:
+   - rakudobrew build-panda
+   - panda install Test::Deeply::Relaxed
