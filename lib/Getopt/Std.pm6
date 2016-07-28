@@ -50,7 +50,7 @@ sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D] is export(:util)
 
 sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
 {
-	for %opts{*}:kv -> $opt, $value {
+	for %opts.kv -> $opt, $value {
 		%opts{$opt} = %defs{$opt} || $opt eq chr(1)
 		    ?? $value[* - 1]
 		    !! $value.join('');
