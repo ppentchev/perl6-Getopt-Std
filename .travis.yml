@@ -13,5 +13,8 @@ before_script:
    - rakudobrew build-panda
    - rakudobrew build zef
 script:
-   - zef --dry install .
+   - zef --installed list > installed-before.txt
+   - zef install .
+   - zef --installed list | diff -u installed-before.txt - | sed -ne '/^[+][^+]/ { s/^[+]//; p; }' | tr "\n" "\0" | xargs -0 zef uninstall
+   - rm installed-before.txt
    - panda install .
