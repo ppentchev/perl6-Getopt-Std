@@ -8,7 +8,10 @@
     "Getopt::Std": "lib/Getopt/Std.pm6"
   },
   "depends": [],
-  "test-depends": [ "Test::Deeply::Relaxed" ],
+  "test-depends": [
+    "Test::Deeply::Relaxed",
+    "Test::META"
+  ],
   "resources": [],
   "source-url": "https://github.com/ppentchev/perl6-Getopt-Std.git"
 }
