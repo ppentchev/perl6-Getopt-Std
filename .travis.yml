@@ -11,4 +11,7 @@ perl6:
    - latest
 before_script:
    - rakudobrew build-panda
-   - panda install Test::Deeply::Relaxed
+   - rakudobrew build zef
+script:
+   - zef --dry install .
+   - panda install .
