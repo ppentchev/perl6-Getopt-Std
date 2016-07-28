@@ -2,7 +2,7 @@
 
 use v6.c;
 
-unit module Getopt::Std;
+unit module Getopt::Std:ver<0.1.0>:auth<github:ppentchev>;
 
 grammar GetoptDefs
 {
@@ -236,6 +236,8 @@ has been exhausted.
 
 Return true on success, false if an invalid option string has been
 specified or an unknown option has been found in the arguments array.
+
+Current API available since version 0.1.0.
 =end item1
 
 =begin item1
@@ -251,6 +253,8 @@ the value of non-argument-taking options with a string containing
 the option name as many times as it was specified, and the value of
 argument-taking options with the last value supplied on the command line.
 Intended for C<getopts()> internal use and testing.
+
+Current API available since version 0.1.0.
 =end item1
 
 =begin item1
@@ -263,6 +267,8 @@ This function is only available with a C<:util> import.
 Parse a C<getopts()> option string and return a hash with the options
 as keys and whether the respective option expects an argument as values.
 Intended for C<getopts()> internal use and testing.
+
+Current API available since version 0.1.0.
 =end item1
 
 =head1 AUTHOR
