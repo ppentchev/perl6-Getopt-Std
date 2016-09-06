@@ -5,7 +5,7 @@ use v6.c;
 use Test;
 use Test::Deeply::Relaxed;
 
-use Getopt::Std :DEFAULT, :util;
+use Getopt::Std :DEFAULT;
 
 my Str:D %base-opts = :foo('bar'), :baz('quux'), :h(''), :something('15'), :O('-3.5');
 my Str:D @base-args = <-v -I tina -vOverbose something -o something -- else -h>;
@@ -30,8 +30,6 @@ class TestCase
 
 sub test-getopts(TestCase:D $t)
 {
-	my Bool:D %defs = getopts-parse-optstring($t.optstring);
-
 	sub run-test(Bool:D $res, %res-opts, @res-args, Bool:D :$all,
 	    Bool:D :$permute, Bool:D :$unknown)
 	{
@@ -48,8 +46,15 @@ sub test-getopts(TestCase:D $t)
 			return;
 		}
 
-		my %exp-opts = %res-opts;
-		getopts-collapse-array(%defs, %exp-opts) unless $all;
+		my %exp-opts = $all?? %res-opts!!
+			$t.optstring.comb(/ . ':'? /).flatmap(-> $opt {
+				my Bool:D $arg = $opt.chars > 1;
+				my Str:D $char = $arg?? $opt.substr(0, 1)!! $opt;
+				my $exp = %res-opts{$char};
+				$exp.defined??
+					($char => $arg?? $exp[* - 1]!! $exp.join(''),)!!
+					()
+			});
 		is-deeply-relaxed %test-opts, %exp-opts, "$test: stores the expected options";
 		is-deeply-relaxed @test-args, @res-args, "$test: leaves the expected arguments";
 	}
@@ -61,7 +66,7 @@ sub test-getopts(TestCase:D $t)
 		    :$all, :permute, :!unknown;
 
 		run-test $t.res, $t.unknown-opts, $t.unknown-args,
-		    :$all, :!permute, :unknown if $t.unknown-opts;
+		    :$all, :!permute, :unknown if $t.unknown-opts && $all;
 	}
 }
 
@@ -227,5 +232,5 @@ my @tests = (
 	),
 );
 
-plan 3 * 2 * (2 * @tests.elems + @tests.grep(*.unknown-opts).elems);
+plan 3 * (4 * @tests.elems + @tests.grep(*.unknown-opts).elems);
 test-getopts($_) for @tests;

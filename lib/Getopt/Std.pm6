@@ -41,14 +41,14 @@ grammar GetoptDefs
 	}
 }
 
-sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D] is export(:util)
+sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D]
 {
 	my $m = GetoptDefs.parse($optstr);
 	die "Could not parse the options string '$optstr'" without $m;
 	return $m.made;
 }
 
-sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
+sub getopts-collapse-array(Bool:D %defs, %opts)
 {
 	for %opts.kv -> $opt, $value {
 		%opts{$opt} = %defs{$opt} || $opt eq chr(1)
@@ -228,37 +228,6 @@ Throws an exception if an invalid option string has been
 specified or an unknown option has been found in the arguments array.
 
 Current API available since version 1.0.0.
-=end item1
-
-=begin item1
-sub getopts-collapse-array
-
-    sub getopts-collapse-array(Bool:D %defs, %opts)
-
-This function is only available with a C<:util> import.
-
-Collapse a hash of option arrays as returned by C<getopts(:all)> into 
-a hash of option strings as returned by C<getopts(:!all)>.  Replace
-the value of non-argument-taking options with a string containing
-the option name as many times as it was specified, and the value of
-argument-taking options with the last value supplied on the command line.
-Intended for C<getopts()> internal use and testing.
-
-Current API available since version 0.1.0.
-=end item1
-
-=begin item1
-sub getopts-parse-optstring
-
-    sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D]
-
-This function is only available with a C<:util> import.
-
-Parse a C<getopts()> option string and return a hash with the options
-as keys and whether the respective option expects an argument as values.
-Intended for C<getopts()> internal use and testing.
-
-Current API available since version 0.1.0.
 =end item1
 
 =head1 AUTHOR
