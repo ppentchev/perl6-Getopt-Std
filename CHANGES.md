@@ -7,7 +7,7 @@ Change log for the Getopt::Std Perl 6 module
 - Add the Rakudo 2016.08 release to the ones tested at Travis CI.
 - Do not error out on an empty option string if the :unknown or
   :nonopts flags are specified.
-- Throw an exception instead of returning false.
+- Throw an X::Getopt::Std exception instead of returning false.
 - Stop exporting two internal utility functions even if :util is
   specified when importing the module.
 - Skip the :unknown :!all cases in the test suite.

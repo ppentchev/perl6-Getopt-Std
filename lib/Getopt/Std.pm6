@@ -4,6 +4,16 @@ use v6.c;
 
 unit module Getopt::Std:ver<1.0.0.dev1>:auth<github:ppentchev>;
 
+class X::Getopt::Std is Exception
+{
+	has Str:D $.message is required;
+}
+
+sub xdie(Str:D $message)
+{
+	fail X::Getopt::Std.new(:$message)
+}
+
 grammar GetoptDefs
 {
 	token TOP { <options> }
@@ -17,7 +27,7 @@ grammar GetoptDefs
 		method TOP($/) {
 			my @opts = $<options>.made;
 			my $dup-check = @opts.map(*.key).Bag.grep(*.value > 1).map(*.key).sort.join(', ');
-			die "Duplicate option(s) defined: $dup-check" if $dup-check;
+			xdie "Duplicate option(s) defined: $dup-check" if $dup-check;
 			make Hash[Bool:D].new(@opts);
 		}
 
@@ -44,7 +54,7 @@ grammar GetoptDefs
 sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D]
 {
 	my $m = GetoptDefs.parse($optstr);
-	die "Could not parse the options string '$optstr'" without $m;
+	xdie "Could not parse the options string '$optstr'" without $m;
 	return $m.made;
 }
 
@@ -60,7 +70,7 @@ sub getopts-collapse-array(Bool:D %defs, %opts)
 sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
     Bool :$permute, Bool :$unknown) is export
 {
-	die 'No options defined' if $optstr eq '' && !$nonopts && !$unknown;
+	xdie 'No options defined' if $optstr eq '' && !$nonopts && !$unknown;
 	my Bool:D %defs = getopts-parse-optstring($optstr);
 
 	my Str:D @restore;
@@ -85,7 +95,7 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
 				$x = ~$<rest>;
 				my Str:D $opt = ~$<opt>;
 				if not %defs{$opt}:k {
-					die "Invalid option '-$<opt>' specified" unless $unknown;
+					xdie "Invalid option '-$<opt>' specified" unless $unknown;
 					take ':' => $opt;
 				} elsif !%defs{$opt} {
 					take $opt => $opt;
@@ -93,19 +103,19 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
 					take $opt => $x;
 					$x = '';
 				} elsif @args.elems == 0 {
-					die "Option '-$<opt>' requires an argument";
+					xdie "Option '-$<opt>' requires an argument";
 				} else {
 					take $opt => @args.shift;
 				}
 			}
 			if $x ne '' {
-				die "Invalid option string '$x' specified";
+				xdie "Invalid option string '$x' specified";
 			}
 		}
 	};
 
 	if $nonopts {
-		die "getopts() internal error: arguments left with nonopts: @args.perl()" if @args;
+		xdie "getopts() internal error: arguments left with nonopts: @args.perl()" if @args;
 		%opts{chr(1)} = @restore.clone;
 	} else {
 		@args.unshift(|@restore);
@@ -129,8 +139,8 @@ Getopt::Std - Process single-character options with option clustering
     # - for options that don't, return a string containing the option
     #   name as many times as the option was specified
 
-    my Str:D %opts;
-    usage() unless getopts('ho:V', %opts, @*ARGS);
+    my Str:D %opts = getopts('ho:V', @*ARGS);
+    CATCH { when X::Getopt::Std { .message.note; usage } };
 
     version() if %opts<V>;
     usage(True) if %opts<h>;
@@ -144,8 +154,7 @@ Getopt::Std - Process single-character options with option clustering
     # - for options that don't, return the option name as many times
     #   as it was specified
 
-    my Array[Str:D] %opts;
-    usage() unless getopts('o:v', %opts, @*ARGS, :all);
+    my Array[Str:D] %opts = getopts('o:v', @*ARGS, :all);
 
     $verbose_level = %opts<v>.elems;
 
@@ -159,7 +168,7 @@ Getopt::Std - Process single-character options with option clustering
     # - stop at an -- argument
 
     my Str:D %opts;
-    usage() unless getopts('ho:V', %opts, @*ARGS, :permute);
+    %opts = getopts('ho:V', @*ARGS, :permute);
 =end code
 
 =head1 DESCRIPTION
@@ -224,7 +233,7 @@ with a C<-> character.  The C<:permute> flag is redundant if C<:nonopts>
 is specified since the processing will not stop until the arguments array
 has been exhausted.
 
-Throws an exception if an invalid option string has been
+Throws an C<X::Getopt::Std> exception if an invalid option string has been
 specified or an unknown option has been found in the arguments array.
 
 Current API available since version 1.0.0.
