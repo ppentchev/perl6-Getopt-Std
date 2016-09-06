@@ -58,58 +58,49 @@ sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
 }
 
 sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
-    Bool :$permute, Bool :$unknown) returns Bool:D is export
+    Bool :$permute, Bool :$unknown) is export
 {
-	if $optstr eq '' && !$nonopts && !$unknown {
-		note 'No options defined';
-		return False;
-	}
+	die 'No options defined' if $optstr eq '' && !$nonopts && !$unknown;
 	my Bool:D %defs = getopts-parse-optstring($optstr);
 
 	my Str:D @restore;
 	my Bool:D $result = True;
 	%opts = ();
 	%opts{$_.key}.push($_.value) for gather {
-		try {
-			while @args {
-				my $x = @args.shift;
-				if $x eq '--' {
+		while @args {
+			my $x = @args.shift;
+			if $x eq '--' {
+				last;
+			} elsif $x !~~ /^ '-' $<opts> = [ .+ ] $/ {
+				push @restore, $x;
+				if $permute || $nonopts {
+					next;
+				} else {
 					last;
-				} elsif $x !~~ /^ '-' $<opts> = [ .+ ] $/ {
-					push @restore, $x;
-					if $permute || $nonopts {
-						next;
-					} else {
-						last;
-					}
-				}
-				$x = ~$<opts>;
-	
-				while $x ~~ /^ $<opt> = [ <[a..zA..Z0..9?]> ] $<rest> = [ .* ] $/ {
-					$x = ~$<rest>;
-					my Str:D $opt = ~$<opt>;
-					if not %defs{$opt}:k {
-						die "Invalid option '-$<opt>' specified" unless $unknown;
-						take ':' => $opt;
-					} elsif !%defs{$opt} {
-						take $opt => $opt;
-					} elsif $x ne '' {
-						take $opt => $x;
-						$x = '';
-					} elsif @args.elems == 0 {
-						die "Option '-$<opt>' requires an argument";
-					} else {
-						take $opt => @args.shift;
-					}
-				}
-				if $x ne '' {
-					die "Invalid option string '$x' specified";
 				}
 			}
-		};
-		if $! {
-			note ~$!;
-			$result = False;
+			$x = ~$<opts>;
+
+			while $x ~~ /^ $<opt> = [ <[a..zA..Z0..9?]> ] $<rest> = [ .* ] $/ {
+				$x = ~$<rest>;
+				my Str:D $opt = ~$<opt>;
+				if not %defs{$opt}:k {
+					die "Invalid option '-$<opt>' specified" unless $unknown;
+					take ':' => $opt;
+				} elsif !%defs{$opt} {
+					take $opt => $opt;
+				} elsif $x ne '' {
+					take $opt => $x;
+					$x = '';
+				} elsif @args.elems == 0 {
+					die "Option '-$<opt>' requires an argument";
+				} else {
+					take $opt => @args.shift;
+				}
+			}
+			if $x ne '' {
+				die "Invalid option string '$x' specified";
+			}
 		}
 	};
 
@@ -120,7 +111,6 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
 		@args.unshift(|@restore);
 	}
 	getopts-collapse-array %defs, %opts unless $all;
-	return $result;
 }
 
 =begin pod
@@ -200,7 +190,7 @@ options that do not.
 sub getopts
 
     sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
-      Bool :$permute, Bool :$unknown) returns Bool:D
+      Bool :$permute, Bool :$unknown)
 
 Look for the command-line options specified in C<$optstr> in the C<@args>
 array.  Record the options found into the C<%opts> hash, leave only
@@ -221,10 +211,10 @@ this case, too.
 
 The C<:unknown> flag controls the handling of unknown options - ones not
 specified in the C<$optstr>, but present in the C<@args>.  If it is
-false (the default), C<getopts()> will output an error message and
-return false; otherwise, the unknown option character will be present in
+false (the default), C<getopts()> will throw an exception;
+otherwise, the unknown option character will be present in
 the result C<%opts> as an argument to a C<:> option and C<getopts()> will
-still return true.  This is similar to the behavior of some C<getopt(3)>
+still succeed.  This is similar to the behavior of some C<getopt(3)>
 implementations if C<$optstr> starts with a C<:> character.
 
 The C<:nonopts> flag makes C<getopts()> treat each non-option argument as
@@ -234,10 +224,10 @@ with a C<-> character.  The C<:permute> flag is redundant if C<:nonopts>
 is specified since the processing will not stop until the arguments array
 has been exhausted.
 
-Return true on success, false if an invalid option string has been
+Throws an exception if an invalid option string has been
 specified or an unknown option has been found in the arguments array.
 
-Current API available since version 0.1.0.
+Current API available since version 1.0.0.
 =end item1
 
 =begin item1

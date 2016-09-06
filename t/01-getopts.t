@@ -38,10 +38,15 @@ sub test-getopts(TestCase:D $t)
 		my Str:D $test = "$t.name() [all: $all permute: $permute unknown: $unknown]";
 		my Str:D @test-args = $t.args;
 		my %test-opts = $t.opts;
-		my Bool:D $result = getopts($t.optstring, %test-opts, @test-args,
+		try getopts($t.optstring, %test-opts, @test-args,
 		    :$all, :$permute, :$unknown);
+		my Bool:D $result = !$!;
 		my Bool:D $exp-res = $res || $unknown;
 		is $result, $exp-res, "$test: " ~ ($exp-res?? 'succeeds'!! 'fails');
+		if !$result {
+			skip "$test failed, not testing options or arguments", 2;
+			return;
+		}
 
 		my %exp-opts = %res-opts;
 		getopts-collapse-array(%defs, %exp-opts) unless $all;
