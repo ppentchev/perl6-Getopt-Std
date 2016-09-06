@@ -11,6 +11,9 @@ Change log for the Getopt::Std Perl 6 module
 - Stop exporting two internal utility functions even if :util is
   specified when importing the module.
 - Skip the :unknown :!all cases in the test suite.
+- Remove the :all flag and split it out into the getopts-all()
+  function instead, if only to be able to predict the type of
+  the returned options array.  Closes: #1; thanks, Tom Browder!
 
 0.1.0
 -----

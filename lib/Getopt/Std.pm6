@@ -58,25 +58,26 @@ sub getopts-parse-optstring(Str:D $optstr) returns Hash[Bool:D]
 	return $m.made;
 }
 
-sub getopts-collapse-array(Bool:D %defs, %opts)
+sub getopts-collapse-array(Bool:D %defs, Hash[Array[Str:D]] $opts) returns Hash[Str:D]
 {
-	for %opts.kv -> $opt, $value {
-		%opts{$opt} = %defs{$opt} || $opt eq chr(1)
+	Hash[Str:D].new($opts.map(-> $pair {
+		my ($opt, $value) = $pair.kv;
+		$opt => %defs{$opt} || $opt eq chr(1)
 		    ?? $value[* - 1]
-		    !! $value.join('');
-	}
+		    !! $value.join('')
+	}))
 }
 
-sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
-    Bool :$permute, Bool :$unknown) is export
+sub getopts-all(Str:D $optstr, @args, Bool :$all, Bool :$nonopts,
+    Bool :$permute, Bool :$unknown) returns Hash[Array[Str:D]] is export
 {
 	xdie 'No options defined' if $optstr eq '' && !$nonopts && !$unknown;
 	my Bool:D %defs = getopts-parse-optstring($optstr);
 
 	my Str:D @restore;
 	my Bool:D $result = True;
-	%opts = ();
-	%opts{$_.key}.push($_.value) for gather {
+	my Hash[Array[Str:D]] $opts .= new;
+	$opts{$_.key}.push($_.value) for gather {
 		while @args {
 			my $x = @args.shift;
 			if $x eq '--' {
@@ -116,11 +117,18 @@ sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
 
 	if $nonopts {
 		xdie "getopts() internal error: arguments left with nonopts: @args.perl()" if @args;
-		%opts{chr(1)} = @restore.clone;
+		$opts{chr(1)} = @restore.clone;
 	} else {
 		@args.unshift(|@restore);
 	}
-	getopts-collapse-array %defs, %opts unless $all;
+	Hash[Array[Str:D]].new($opts.keys.map(-> $key { $key => Array[Str:D].new(|$opts{$key}) }))
+}
+
+sub getopts(Str:D $optstr, @args, Bool :$all, Bool :$nonopts,
+    Bool :$permute, Bool :$unknown) returns Hash[Str:D] is export
+{
+	my Bool:D %defs = getopts-parse-optstring($optstr);
+	getopts-collapse-array %defs, getopts-all $optstr, @args, :$all, :$nonopts, :$permute, :$unknown
 }
 
 =begin pod
@@ -154,7 +162,7 @@ Getopt::Std - Process single-character options with option clustering
     # - for options that don't, return the option name as many times
     #   as it was specified
 
-    my Array[Str:D] %opts = getopts('o:v', @*ARGS, :all);
+    my Array[Str:D] %opts = getopts-all('o:v', @*ARGS);
 
     $verbose_level = %opts<v>.elems;
 
