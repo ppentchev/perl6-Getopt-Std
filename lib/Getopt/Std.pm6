@@ -60,7 +60,7 @@ sub getopts-collapse-array(Bool:D %defs, %opts) is export(:util)
 sub getopts(Str:D $optstr, %opts, @args, Bool :$all, Bool :$nonopts,
     Bool :$permute, Bool :$unknown) returns Bool:D is export
 {
-	if $optstr eq '' {
+	if $optstr eq '' && !$nonopts && !$unknown {
 		note 'No options defined';
 		return False;
 	}

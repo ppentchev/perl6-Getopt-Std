@@ -5,6 +5,8 @@ Change log for the Getopt::Std Perl 6 module
 --------------------
 
 - Add the Rakudo 2016.08 release to the ones tested at Travis CI.
+- Do not error out on an empty option string if the :unknown or
+  :nonopts flags are specified.
 
 0.1.0
 -----
