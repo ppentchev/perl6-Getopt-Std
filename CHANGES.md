@@ -17,6 +17,8 @@ Change log for the Getopt::Std Perl 6 module
 - Update the Travis CI build:
   - build on the 2017.{06,07,08,09} Rakudo Perl 6 releases
   - do not test building with "panda"
+- Merge Samantha McVey's pull request #1 to specify
+  the Artistic-2.0 license in META6.json.
 
 0.1.0
 -----
