@@ -1,8 +1,8 @@
 Change log for the Getopt::Std Perl 6 module
 ============================================
 
-1.0.0.dev1 (not yet)
---------------------
+1.0.0
+-----
 
 - Do not error out on an empty option string if the :unknown or
   :nonopts flags are specified.
