@@ -83,7 +83,7 @@ Peter Pentchev <[roam@ringlet.net](mailto:roam@ringlet.net)>
 COPYRIGHT
 =========
 
-Copyright (C) 2016 Peter Pentchev
+Copyright (C) 2016, 2017 Peter Pentchev
 
 LICENSE
 =======
