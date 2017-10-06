@@ -1,8 +1,8 @@
 Change log for the Getopt::Std Perl 6 module
 ============================================
 
-1.0.1.dev1
-----------
+1.0.1
+-----
 
 - Support non-alphanumeric characters as option characters, e.g.
   let a "-:" option string be used to sort of support long options
