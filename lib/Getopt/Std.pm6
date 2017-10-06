@@ -92,7 +92,7 @@ sub getopts-all(Str:D $optstr, @args, Bool :$nonopts,
 			}
 			$x = ~$<opts>;
 
-			while $x ~~ /^ $<opt> = [ <[a..zA..Z0..9?]> ] $<rest> = [ .* ] $/ {
+			while $x ~~ /^ $<opt> = [ . ] $<rest> = [ .* ] $/ {
 				$x = ~$<rest>;
 				my Str:D $opt = ~$<opt>;
 				if not %defs{$opt}:k {
