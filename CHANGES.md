@@ -6,6 +6,7 @@ Change log for the Getopt::Std Raku module
 
 - Rename the files using Raku extensions.
 - Add some more fields to the META6.json file.
+- Declare the API version in the module itself.
 
 1.0.1
 -----
