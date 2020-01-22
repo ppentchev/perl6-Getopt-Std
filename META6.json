@@ -2,6 +2,8 @@
   "perl": "6.c",
   "name": "Getopt::Std",
   "license" : "Artistic-2.0",
+  "api": "1",
+  "auth": "github:ppentchev",
   "version": "1.0.2",
   "description": "Process single-character options with option clustering",
   "authors": [ "Peter Pentchev" ],
@@ -14,5 +16,11 @@
     "Test::META"
   ],
   "resources": [],
-  "source-url": "https://github.com/ppentchev/perl6-Getopt-Std.git"
+  "source-url": "https://github.com/ppentchev/perl6-Getopt-Std.git",
+  "support": {
+    "email": "roam@ringlet.net",
+    "bugtracker": "https://github.com/ppentchev/perl6-Getopt-Std/issues",
+    "source": "https://github.com/ppentchev/perl6-Getopt-Std.git"
+  },
+  "production": true
 }
