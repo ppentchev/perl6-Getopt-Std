@@ -94,9 +94,10 @@ Peter Pentchev <[roam@ringlet.net](mailto:roam@ringlet.net)>
 COPYRIGHT
 =========
 
-Copyright (C) 2016, 2017 Peter Pentchev
+Copyright (C) 2016, 2017, 2020 Peter Pentchev
 
 LICENSE
 =======
 
 The Getopt::Std module is distributed under the terms of the Artistic License 2.0. For more details, see the full text of the license in the file LICENSE in the source distribution.
+
