@@ -1,5 +1,10 @@
-Change log for the Getopt::Std Perl 6 module
-============================================
+Change log for the Getopt::Std Raku module
+==========================================
+
+1.0.2
+-----
+
+- Rename the files using Raku extensions.
 
 1.0.1
 -----

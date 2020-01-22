@@ -1,8 +1,8 @@
-#!/usr/bin/env perl6
+#!/usr/bin/env raku
 
 use v6.c;
 
-unit module Getopt::Std:ver<1.0.1>:auth<github:ppentchev>;
+unit module Getopt::Std:ver<1.0.2>:auth<github:ppentchev>;
 
 class X::Getopt::Std is Exception
 {
