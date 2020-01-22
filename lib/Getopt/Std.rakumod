@@ -2,7 +2,7 @@
 
 use v6.c;
 
-unit module Getopt::Std:ver<1.0.2>:auth<github:ppentchev>;
+unit module Getopt::Std:ver<1.0.2>:auth<github:ppentchev>:api<1>;
 
 class X::Getopt::Std is Exception
 {
